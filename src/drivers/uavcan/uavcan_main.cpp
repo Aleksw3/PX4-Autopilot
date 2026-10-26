@@ -81,7 +81,8 @@ UavcanNode::UavcanNode(uavcan::ICanDriver &can_driver, uavcan::ISystemClock &sys
 	ModuleParams(nullptr),
 	_node_id(node_id),
 	_bitrate(bitrate),
-	_node(can_driver, system_clock, _pool_allocator),
+	_can_frame_forwarder(can_driver),
+	_node(_can_frame_forwarder, system_clock, _pool_allocator),
 #if defined(CONFIG_UAVCAN_ARMING_CONTROLLER)
 	_arming_status_controller(_node),
 #endif
@@ -807,6 +808,10 @@ UavcanNode::Run()
 
 	_node.spinOnce(); // expected to be non-blocking
 
+	if (_node.isStarted()) {
+		_can_frame_forwarder.sendFramesToBus(_node.getDispatcher());
+	}
+
 	apply_can_failure_injection();
 
 	publish_can_interface_statuses();
@@ -1021,6 +1026,24 @@ UavcanNode::Run()
 
 					param_opcode(get_next_dirty_node_id(1));
 					break;
+				}
+			}
+
+		} else if (cmd.command == vehicle_command_s::VEHICLE_CMD_CAN_FORWARD) {
+			acknowledge = true;
+
+			// param1 is the 1-based bus number, 0 stops forwarding
+			if (!(cmd.param1 >= 0.f && cmd.param1 <= UINT8_MAX)) {
+				cmd_ack_result = vehicle_command_ack_s::VEHICLE_CMD_RESULT_DENIED;
+
+			} else {
+				const uint8_t bus = static_cast<uint8_t>(roundf(cmd.param1));
+
+				if (bus == 0) {
+					_can_frame_forwarder.stopForwarding();
+
+				} else if (!_can_frame_forwarder.requestForwarding(bus - 1)) {
+					cmd_ack_result = vehicle_command_ack_s::VEHICLE_CMD_RESULT_DENIED;
 				}
 			}
 		}

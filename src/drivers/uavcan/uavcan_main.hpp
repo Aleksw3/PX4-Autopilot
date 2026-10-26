@@ -65,6 +65,7 @@
 
 #if defined(CONFIG_UAVCAN_BEEP_CONTROLLER)
 #include "beep.hpp"
+#include "can_frame_forwarder.hpp"
 #endif
 
 #include "logmessage.hpp"
@@ -272,6 +273,7 @@ private:
 	int                     _can_init_error{0};		///< last CAN driver init error reported
 	const uavcan::NodeID	_node_id;			///< node ID, validated by uavcan_main()
 	const uint32_t		_bitrate;			///< CAN bit rate in bit/s
+	CanFrameForwarder		_can_frame_forwarder;		///< wraps the CAN driver, must be constructed before _node
 	uavcan::Node<>			_node;				///< library instance
 	pthread_mutex_t			_node_mutex;
 

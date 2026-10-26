@@ -374,6 +374,36 @@ The `upload_skynode.sh` script with multiple `--ext-fw` flags is used to bundle 
 Another tool then checks which files were already uploaded using a local database and extracts just the relevant files to the PX4 firmware staging area.
 :::
 
+## CAN Forwarding over MAVLink
+
+PX4 can forward a CAN bus over MAVLink, so that a tool on the ground station computer can use the bus as if it were plugged into it.
+The [DroneCAN GUI Tool](https://dronecan.github.io/GUI_Tool/Overview/) uses this to list the nodes on the bus, show their messages, change their parameters and update their firmware, without a separate CAN adapter.
+
+The tool starts forwarding with [MAV_CMD_CAN_FORWARD](https://mavlink.io/en/messages/common.html#MAV_CMD_CAN_FORWARD), where `param1` is the bus number (`1` for the first CAN interface, `0` to stop).
+PX4 then sends every frame on that bus as a [CAN_FRAME](https://mavlink.io/en/messages/common.html#CAN_FRAME) message to the component that sent the command.
+This includes the frames sent by the DroneCAN node of PX4 itself.
+PX4 puts the `CAN_FRAME` messages it receives from that component on the bus.
+The tool must repeat the command at least every 5 seconds, otherwise forwarding stops.
+On a link with little bandwidth, the tool can limit which DroneCAN messages and services PX4 forwards with [CAN_FILTER_MODIFY](https://mavlink.io/en/messages/common.html#CAN_FILTER_MODIFY).
+
+To use the DroneCAN GUI Tool:
+
+1. Enable DroneCAN with [UAVCAN_ENABLE](../advanced_config/parameter_reference.md#UAVCAN_ENABLE) and reboot.
+1. Start the _DroneCAN GUI Tool_ and select the MAVLink connection of the flight controller as the CAN interface:
+   - For a USB or serial connection, select the serial port. The tool detects that the port carries MAVLink.
+   - For a UDP connection, enter `mavcan:udpin:0.0.0.0:<port>`, where `<port>` is a UDP port PX4 sends MAVLink to.
+1. Set the bus number to the CAN interface you want to use.
+
+Forwarding has these limitations:
+
+- Only classic CAN frames are forwarded. [CANFD_FRAME](https://mavlink.io/en/messages/common.html#CANFD_FRAME) is not supported.
+- The DroneCAN node of PX4 does not receive the frames from the tool. The tool lists the PX4 node, but cannot read its node information or parameters.
+
+::: warning
+The frames from the tool are put on the bus whether the vehicle is armed or not.
+Do not send commands to nodes such as ESCs or servos from the tool while the vehicle is armed.
+:::
+
 ## Troubleshooting
 
 **Q**: My DroneCAN devices aren't working.

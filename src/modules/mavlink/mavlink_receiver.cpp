@@ -116,6 +116,7 @@ static constexpr vehicle_odometry_s vehicle_odometry_empty {
 MavlinkReceiver::MavlinkReceiver(Mavlink &parent) :
 	ModuleParams(nullptr),
 	_mavlink(parent),
+	_mavlink_can_forward(parent),
 	_mavlink_ftp(parent),
 	_mavlink_log_handler(parent),
 	_mission_manager(parent),
@@ -463,6 +464,9 @@ MavlinkReceiver::handle_message(mavlink_message_t *msg)
 	/* handle packet with timesync component */
 	_mavlink_timesync.handle_message(msg);
 
+	/* handle packet with CAN forwarding component */
+	_mavlink_can_forward.handleMessage(msg);
+
 	/* handle packet with parent object */
 	_mavlink.handle_message(msg);
 }
@@ -791,6 +795,11 @@ void MavlinkReceiver::handle_message_command_both(mavlink_message_t *msg, const 
 	} else if (vehicle_command.command == MAV_CMD_DO_SET_MODE) {
 		_cmd_pub.publish(vehicle_command);
 		send_ack = false;	//Acknowledgement handled by Commander
+
+	} else if (vehicle_command.command == MAV_CMD_CAN_FORWARD) {
+		_mavlink_can_forward.handleForwardCommand(msg->sysid, msg->compid, vehicle_command.param1);
+		_cmd_pub.publish(vehicle_command);
+		send_ack = false;	// Acknowledgement handled by the uavcan driver
 
 	} else if (vehicle_command.command == MAV_CMD_DO_AUTOTUNE_ENABLE) {
 
@@ -4157,6 +4166,7 @@ MavlinkReceiver::run()
 
 			_mavlink_log_handler.send();
 			_mavlink.set_log_download_active(_mavlink_log_handler.sending_data());
+			_mavlink_can_forward.send();
 			_mavlink.unlock_send();
 			last_send_update = t;
 		}

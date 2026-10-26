@@ -43,6 +43,7 @@
 
 #pragma once
 
+#include "MavlinkCanForward.hpp"
 #include "mavlink_ftp.h"
 #include "mavlink_log_handler.h"
 #include "mavlink_mission.h"
@@ -318,6 +319,7 @@ private:
 
 	Mavlink &_mavlink;
 
+	MavlinkCanForward		_mavlink_can_forward;
 	MavlinkFTP			_mavlink_ftp;
 	MavlinkLogHandler		_mavlink_log_handler;
 	MavlinkMissionManager		_mission_manager;

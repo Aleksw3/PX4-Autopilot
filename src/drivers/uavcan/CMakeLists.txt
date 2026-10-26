@@ -148,6 +148,8 @@ px4_add_module(
 		arming_status.hpp
 		beep.cpp
 		beep.hpp
+		can_frame_forwarder.cpp
+		can_frame_forwarder.hpp
 		${remoteid_srcs}
 		rgbled.cpp
 		rgbled.hpp

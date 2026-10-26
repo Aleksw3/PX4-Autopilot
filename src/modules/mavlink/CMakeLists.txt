@@ -122,6 +122,8 @@ px4_add_module(
 		mavlink_timesync.cpp
 		mavlink_ulog.cpp
 		mavlink_sign_control.cpp
+		CanFrameFilter.cpp
+		MavlinkCanForward.cpp
 		MavlinkStatustextHandler.cpp
 		open_drone_id_translations.cpp
 		tune_publisher.cpp
@@ -170,6 +172,8 @@ px4_add_unit_gtest(SRC MavlinkStatustextHandlerTest.cpp
 	)
 
 px4_add_unit_gtest(SRC MavlinkFtpParamTest.cpp EXTRA_SRCS mavlink_ftp_param.cpp)
+
+px4_add_unit_gtest(SRC CanFrameFilterTest.cpp EXTRA_SRCS CanFrameFilter.cpp)
 
 if(CONFIG_NET AND "${PX4_PLATFORM}" MATCHES "nuttx")
 	target_link_libraries(modules__mavlink PRIVATE nuttx_apps) # netlib_get_ipv4netmask
